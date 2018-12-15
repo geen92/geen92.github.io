@@ -1,0 +1,295 @@
+<body bgcolor='#000'>
+<center>
+  <canvas id='canvas' width=1200 height=800 style='height:95%;'></canvas>
+  <script>
+  
+  
+var ctx = document.getElementById('canvas').getContext('2d');
+var w = ctx.canvas.width;
+var h = ctx.canvas.height;
+var cw = w/24;
+var ch = h/24;
+var cycle;
+var snake;
+var apple1, apple2;
+var score = 0;
+var invinc = true;
+var speed = 150;
+var flag = false;
+var head_img, body_img, tail_img, apple_img;
+
+var tail_size = 1.1;
+var tail_size_spd = 0.3;
+var counter = 0;
+
+function loop(){
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, w, h);
+  
+  snake.update();
+  snake.render(ctx);
+  
+  apple1.update();
+  apple1.render(ctx);
+  apple2.update();
+  apple2.render(ctx);
+  
+  
+  ctx.font = '48px monospace'
+  ctx.fillStyle = '#fff';
+  ctx.fillText(score, 5, 40);
+  
+  if(counter>=20){
+    invinc = false;
+    counter = 0;
+    tail_size += tail_size_spd;
+    
+
+    var x1 = Math.floor(Math.random() * 25);
+    var y1 = Math.floor(Math.random() * 25);
+    apple1.x = x1;
+    apple1.y = y1;
+
+  
+    var x2 = Math.floor(Math.random() * 25);
+    var y2 = Math.floor(Math.random() * 25);
+    apple2.x = x2;
+    apple2.y = y2;
+  
+  }
+  counter++;
+  
+  if(tail_size > 4){
+    gameOver(0);
+  }
+  if(score%1==0&&flag){
+    speed -= 2.5;
+    changeSpd(speed);
+    flag = false
+  }
+}
+
+function gameOver(type){
+  var msg;
+  if(type == 0) msg = 'Ваши яйца лопнули от недержания! Ура!';
+  if(type == 1) msg = 'У Вас случился перелом пениса, поздравляем!';
+  
+  ctx.fillStyle = '#f00';
+  ctx.fillText(msg, 60, 40);
+  
+  stop();
+}
+
+function run(){
+  cycle = setInterval(loop, speed);
+}
+
+function stop(){
+  clearInterval(cycle);
+}
+
+function changeSpd(spd){
+  clearInterval(cycle);
+  cycle = setInterval(loop, spd);
+}
+
+
+window.onkeydown = function(e){
+  if(e.key == 'w' || e.key == 'W' || e.keyCode==38){
+    if(snake.getDir()!='down') snake.changeDir('up');
+  } 
+  
+  if(e.key == 's' || e.key == 'S' || e.keyCode==40){
+    if(snake.getDir()!='up') snake.changeDir('down');
+  } 
+  
+  if(e.key == 'a' || e.key == 'A' || e.keyCode==37){
+    if(snake.getDir()!='right') snake.changeDir('left');
+  } 
+  
+  if(e.key == 'd' || e.key == 'D' || e.keyCode==39){
+    if(snake.getDir()!='left') snake.changeDir('right');
+  }
+  
+  if(e.key == 'o') run();
+  if(e.key == 'p') stop();
+}
+
+
+window.onload = function(){
+  snake = new Snake();
+  snake.addElement();
+  snake.addElement();
+  snake.addElement();
+  snake.addElement();
+  snake.addElement();
+  snake.addElement();
+  snake.addElement();
+  snake.addElement();
+  snake.addElement();
+  snake.addElement();
+  
+
+  apple1 = new Apple(-10, -10);
+  apple2 = new Apple(-10, -10);
+  
+  
+  head_img = new Image();
+  head_img.src = 'C:\snake/head.png';
+  body_img = new Image();
+  body_img.src = 'C:\snake/body.png';
+  tail_img = new Image();
+  tail_img.src = 'C:\snake/tail.png';
+  apple_img = new Image();
+  apple_img.src = 'C:\snake/apple.png';
+  
+  apple_img.onload = function(){
+    run();
+  }
+}
+
+
+const Snake = function(){
+  this.elems = [];
+  this.len = 0;
+}
+
+Snake.prototype = {
+  render: function(g){
+    for(var i=this.len-2; i>=0; i--){
+      this.elems[i].render(g);
+    }
+    this.elems[this.len-1].render(g);
+  },
+  
+  update: function(){
+    // updates elements from last to second
+    for(var i=this.len-1; i>=0; i--){
+      this.elems[i].update();
+    }
+  },
+  
+  addElement: function(){
+    if(this.len == 0){
+      this.elems[0] = new Snake.Element(null, '#d66', 'head');
+      this.elems[0].x = 12;
+      this.elems[0].y = 25;
+      this.len++;
+      return;
+    }
+    this.elems[this.len] = new Snake.Element(this.elems[this.len-1], '#944', 'tail');
+    this.len++;
+    if(this.len > 2) this.elems[this.len-2].type = 'body';
+  },
+  
+  changeDir(dir){
+    this.elems[0].dir = dir;
+  },
+  
+  getDir(){
+    return this.elems[0].dir;
+  }
+  
+}
+Snake.Element = function(follow, clr, type){
+  this.follow = follow; //element
+  this.clr = clr;
+  this.x = -10;
+  this.y = -10;
+  
+  this.type = type;
+  this.dir = 'up';
+}
+Snake.Element.prototype = {
+  render: function(g){
+    var spr, size;
+    
+    g.save();
+    g.translate(this.x*cw, this.y*ch);
+    
+    if(this.dir=='up') g.rotate(0/180*Math.PI);
+    if(this.dir=='down') g.rotate(180/180*Math.PI);
+    if(this.dir=='left') g.rotate(270/180*Math.PI);
+    if(this.dir=='right') g.rotate(90/180*Math.PI);
+    
+    if(this.type == 'head'){
+      spr = head_img;
+      size = cw/2*1.5;
+      g.drawImage(head_img, -size, -size, size*2, size*2);
+    }
+    if(this.type == 'body'){
+      spr = body_img;
+      size = cw/2*1.3;
+      g.drawImage(body_img, -size, -size, size*2, size*2);
+    }
+    if(this.type == 'tail'){
+      spr = tail_img;
+      size = cw/2*tail_size;
+      g.drawImage(tail_img, -size*2, -size, size*4, size*2);
+    }
+        
+    g.restore();
+  },
+  update: function(){
+    if(this.type == 'head'){
+      if(this.dir == 'up'){
+        this.y--;
+      }
+      if(this.dir == 'down'){
+        this.y++;
+      }
+      if(this.dir == 'left'){
+        this.x--;
+      }
+      if(this.dir == 'right'){
+        this.x++;
+      }
+      
+      if(this.x < 0) this.x = 25;
+      if(this.x > 25) this.x = 0;
+      
+      if(this.y < 0) this.y = 25;
+      if(this.y > 25) this.y = 0;
+      
+      
+      for(var i=1; i<snake.len; i++){
+        if(invinc) continue;
+        if(this.x==snake.elems[i].x 
+        && this.y==snake.elems[i].y){
+          gameOver(1);
+        }
+      }
+      return;
+    }
+    
+    this.x = this.follow.x;
+    this.y = this.follow.y;
+    this.dir = this.follow.dir;
+  },
+}
+
+const Apple = function(x, y){
+  this.x = x;
+  this.y = y;
+  this.size = 96;
+}
+Apple.prototype = {
+  render: function(g){
+    g.drawImage(apple_img, this.x*cw-this.size/2, this.y*ch-this.size/2, this.size, this.size);
+  },
+  update: function(){
+    if(Math.abs(this.x-snake.elems[0].x)<2 && Math.abs(this.y-snake.elems[0].y)<2){
+      
+      this.x = -10;
+      this.y = -10;
+      tail_size = 1.1;
+      score++;
+      flag = true;
+    }
+  }
+}
+
+
+  </script>
+</center>
+</body>
